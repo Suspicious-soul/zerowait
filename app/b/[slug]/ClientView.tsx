@@ -3,8 +3,16 @@
 import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useState } from 'react';
 
+type Business = {
+    id: string;
+    name: string;
+    address?: string | null;
+    slug: string;
+    qr_url?: string | null;
+};
+
 export default function ClientBusinessView({ slug }: { slug: string }) {
-    const [business, setBusiness] = useState<any>(null);
+    const [business, setBusiness] = useState<Business | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -17,13 +25,15 @@ export default function ClientBusinessView({ slug }: { slug: string }) {
                 .single();
             if (!canceled) {
                 if (error) setError(error.message);
-                else setBusiness(data);
+                else setBusiness(data as Business);
             }
         })();
-        return () => { canceled = true; };
+        return () => {
+            canceled = true;
+        };
     }, [slug]);
 
-    if (error) return <div className="p-6">Business not found.</div>;
+    if (error) return <div className="p-6">Business not found: {error}</div>;
     if (!business) return <div className="p-6">Loading…</div>;
 
     return (
@@ -36,14 +46,4 @@ export default function ClientBusinessView({ slug }: { slug: string }) {
             </div>
         </div>
     );
-}
-
-Make the page a simple shell that passes params.slug:
-
-app / b / [slug] / page.tsx
-
-import ClientBusinessView from './ClientView';
-
-export default function Page({ params }: { params: { slug: string } }) {
-    return <ClientBusinessView slug={params.slug} />;
 }
