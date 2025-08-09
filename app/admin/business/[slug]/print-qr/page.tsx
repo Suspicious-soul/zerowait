@@ -15,24 +15,41 @@ async function getBusiness(slug: string) {
 
         console.log('Querying business with slug:', slug);
 
-        const { data, error } = await supabase
+        // First, let's check what businesses exist
+        const { data: allBusinesses, error: listError } = await supabase
+            .from('businesses')
+            .select('slug, name')
+            .limit(10);
+
+        console.log('All businesses in database:', allBusinesses);
+
+        // Now query for the specific slug, but handle multiple results
+        const { data, error, count } = await supabase
             .from('businesses')
             .select('*')
-            .eq('slug', slug)
-            .single();
+            .eq('slug', slug);
 
         if (error) {
             console.error('Supabase query error:', error);
             throw new Error(`Database error: ${error.message}`);
         }
 
-        if (!data) {
-            console.error('No business found for slug:', slug);
-            throw new Error(`Business not found with slug: ${slug}`);
+        console.log('Query results count:', data?.length || 0);
+        console.log('Query results:', data);
+
+        if (!data || data.length === 0) {
+            throw new Error(`No business found with slug: ${slug}. Available slugs: ${allBusinesses?.map(b => b.slug).join(', ')}`);
         }
 
-        console.log('Business found successfully:', data.name);
-        return data;
+        if (data.length > 1) {
+            console.warn('Multiple businesses found with same slug:', data);
+            // Take the first one, but warn about duplicates
+        }
+
+        const business = data[0]; // Take the first result
+        console.log('Business selected:', business.name);
+        return business;
+
     } catch (error) {
         console.error('getBusiness error:', error);
         throw error;
@@ -43,7 +60,6 @@ export default async function PrintQR({ params }: Props) {
     try {
         console.log('PrintQR page loading...');
 
-        // This is critical for Next.js 15
         const { slug } = await params;
         console.log('Received slug parameter:', slug);
 
