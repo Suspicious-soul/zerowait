@@ -14,10 +14,13 @@ type Business = {
 export default function ClientView({ slug }: { slug: string }) {
     const [business, setBusiness] = useState<Business | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Queue UI state
     const [joining, setJoining] = useState(false);
     const [queuePosition, setQueuePosition] = useState<number | null>(null);
     const [joinError, setJoinError] = useState<string | null>(null);
 
+    // FETCH BUSINESS INFO
     useEffect(() => {
         let canceled = false;
 
@@ -39,29 +42,34 @@ export default function ClientView({ slug }: { slug: string }) {
         };
     }, [slug]);
 
+    // ✅ ADD joinQueue FUNCTION HERE
     async function joinQueue() {
         setJoining(true);
         setJoinError(null);
 
         try {
+            // For now, prompt for details (can replace with form inputs)
+            const customer_name = prompt('Enter your name')?.trim() || '';
+            const phone = prompt('Enter your phone number')?.trim() || '';
+
             const response = await fetch('/api/join-queue', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug }),
+                body: JSON.stringify({ slug, customer_name, phone }),
             });
 
-            const data = await response.json();
+            const data = await response.json(); // This requires API to always return valid JSON
 
-            if (response.ok) {
-                setQueuePosition(data.position);
-            } else {
+            if (!response.ok) {
                 throw new Error(data.error || 'Failed to join queue');
             }
+
+            setQueuePosition(data.position);
         } catch (e: any) {
             setJoinError(e.message || 'Unknown error');
+        } finally {
+            setJoining(false);
         }
-
-        setJoining(false);
     }
 
     if (error) return <div className="p-6">Business not found: {error}</div>;
@@ -76,6 +84,7 @@ export default function ClientView({ slug }: { slug: string }) {
                 <p>QR: {business.qr_url || '—'}</p>
             </div>
 
+            {/* Join Queue Button */}
             <button
                 disabled={joining || queuePosition !== null}
                 onClick={joinQueue}
@@ -91,9 +100,7 @@ export default function ClientView({ slug }: { slug: string }) {
             )}
 
             {joinError && (
-                <p className="mt-2 text-red-600">
-                    Error: {joinError}
-                </p>
+                <p className="mt-2 text-red-600">Error: {joinError}</p>
             )}
         </div>
     );
