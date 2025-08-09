@@ -1,50 +1,110 @@
-async function joinQueue() {
-    setJoining(true);
-    setJoinError(null);
+'use client';
 
-    try {
-        const customer_name = prompt('Enter your name')?.trim() || '';
-        const phone = prompt('Enter your phone number')?.trim() || '';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
-        if (!customer_name) {
-            throw new Error('Name is required');
-        }
+type Business = {
+    id: string;
+    name: string;
+    address?: string | null;
+    slug: string;
+    qr_url?: string | null;
+};
 
-        console.log('Sending request to /api/join-queue with:', { slug, customer_name, phone });
+export default function ClientView({ slug }: { slug: string }) {
+    const [business, setBusiness] = useState<Business | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-        const response = await fetch('/api/join-queue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slug, customer_name, phone }),
-        });
+    // ✅ Queue state hooks - MUST be inside the component
+    const [joining, setJoining] = useState(false);
+    const [queuePosition, setQueuePosition] = useState<number | null>(null);
+    const [joinError, setJoinError] = useState<string | null>(null);
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
+    useEffect(() => {
+        let canceled = false;
 
-        // Check if response has content before parsing JSON
-        const text = await response.text();
-        console.log('Response text:', text);
+        (async () => {
+            const { data, error } = await supabase
+                .from('businesses')
+                .select('*')
+                .eq('slug', slug)
+                .single();
 
-        if (!text) {
-            throw new Error('Empty response from server');
-        }
+            if (!canceled) {
+                if (error) setError(error.message);
+                else setBusiness(data as Business);
+            }
+        })();
 
-        let data;
+        return () => {
+            canceled = true;
+        };
+    }, [slug]);
+
+    // ✅ joinQueue function - MUST be inside the component
+    async function joinQueue() {
+        setJoining(true);
+        setJoinError(null);
+
         try {
-            data = JSON.parse(text);
-        } catch (parseError) {
-            throw new Error(`Invalid JSON response: ${text}`);
-        }
+            const customer_name = prompt('Enter your name')?.trim() || '';
+            const phone = prompt('Enter your phone number')?.trim() || '';
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to join queue');
-        }
+            if (!customer_name) {
+                throw new Error('Name is required');
+            }
 
-        setQueuePosition(data.position);
-    } catch (e: any) {
-        console.error('Join queue error:', e);
-        setJoinError(e.message || 'Unknown error');
-    } finally {
-        setJoining(false);
+            const response = await fetch('/api/join-queue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, customer_name, phone }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to join queue');
+            }
+
+            setQueuePosition(data.position);
+        } catch (e: any) {
+            setJoinError(e.message || 'Unknown error');
+        } finally {
+            setJoining(false);
+        }
     }
+
+    if (error) return <div className="p-6">Business not found: {error}</div>;
+    if (!business) return <div className="p-6">Loading…</div>;
+
+    return (
+        <div className="p-6 space-y-4 max-w-md mx-auto">
+            <h1 className="text-2xl font-semibold">{business.name}</h1>
+            <p className="text-gray-600">{business.address}</p>
+            <div className="border rounded p-4">
+                <p>Public page for: {business.slug}</p>
+                <p>QR: {business.qr_url || '—'}</p>
+            </div>
+
+            <button
+                disabled={joining || queuePosition !== null}
+                onClick={joinQueue}
+                className="px-4 py-2 mt-4 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+                {joining ? 'Joining...' : queuePosition !== null ? 'You Joined!' : 'Join Queue'}
+            </button>
+
+            {queuePosition !== null && (
+                <p className="mt-2 text-lg text-gray-700">
+                    You are number <strong>{queuePosition}</strong> in the queue.
+                </p>
+            )}
+
+            {joinError && (
+                <p className="mt-2 text-red-600">
+                    Error: {joinError}
+                </p>
+            )}
+        </div>
+    );
 }
