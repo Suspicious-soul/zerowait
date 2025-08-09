@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ slug: string }> };
 
 export const dynamic = 'force-dynamic';
 
-async function getBusiness(id: string) {
+async function getBusiness(slug: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -13,7 +13,7 @@ async function getBusiness(id: string) {
     const { data, error } = await supabase
         .from('businesses')
         .select('*')
-        .eq('id', id)
+        .eq('slug', slug)
         .single();
 
     if (error) throw new Error(error.message);
@@ -21,15 +21,15 @@ async function getBusiness(id: string) {
 }
 
 export default async function PrintQR({ params }: Props) {
-    const { id } = await params;
-    const business = await getBusiness(id);
+    const { slug } = await params;
+    const business = await getBusiness(slug);
 
     return (
         <div className="p-8">
-            {/* Print styles handled by Tailwind's print: modifier */}
             <div className="print:hidden mb-4 space-x-2">
                 <button
-                    className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 print-btn"
+                    onClick={() => window.print()}
+                    className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
                 >
                     Print QR Code
                 </button>
@@ -42,7 +42,7 @@ export default async function PrintQR({ params }: Props) {
                 </a>
             </div>
 
-            <div className="border-2 border-gray-300 p-8 rounded-lg max-w-md mx-auto text-center space-y-6 bg-white print:border-0 print:shadow-none">
+            <div className="border-2 border-gray-300 p-8 rounded-lg max-w-md mx-auto text-center space-y-6 bg-white">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">{business.name}</h1>
                     <p className="text-lg text-gray-600 mt-2">{business.address}</p>
@@ -69,20 +69,6 @@ export default async function PrintQR({ params }: Props) {
                     <p className="text-red-500">QR code not found</p>
                 )}
             </div>
-
-            {/* Add print button functionality with inline script */}
-            <script dangerouslySetInnerHTML={{
-                __html: `
-          document.addEventListener('DOMContentLoaded', function() {
-            const printBtn = document.querySelector('.print-btn');
-            if (printBtn) {
-              printBtn.addEventListener('click', function() {
-                window.print();
-              });
-            }
-          });
-        `
-            }} />
         </div>
     );
 }
