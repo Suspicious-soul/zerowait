@@ -12,12 +12,27 @@ type Business = {
     slug: string;
 };
 
-export default function PrintQR({ params }: { params: { slug: string } }) {
+type Props = {
+    params: Promise<{ slug: string }>;
+};
+
+export default function PrintQR({ params }: Props) {
     const [business, setBusiness] = useState<Business | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [slug, setSlug] = useState<string>('');
 
     useEffect(() => {
+        async function getSlug() {
+            const resolvedParams = await params;
+            setSlug(resolvedParams.slug);
+        }
+        getSlug();
+    }, [params]);
+
+    useEffect(() => {
+        if (!slug) return;
+
         async function loadBusiness() {
             try {
                 const supabase = createClient(
@@ -28,12 +43,12 @@ export default function PrintQR({ params }: { params: { slug: string } }) {
                 const { data, error } = await supabase
                     .from('businesses')
                     .select('*')
-                    .eq('slug', params.slug);
+                    .eq('slug', slug);
 
                 if (error) {
                     setError(`Database error: ${error.message}`);
                 } else if (!data || data.length === 0) {
-                    setError(`No business found with slug: ${params.slug}`);
+                    setError(`No business found with slug: ${slug}`);
                 } else {
                     setBusiness(data[0]);
                 }
@@ -45,7 +60,7 @@ export default function PrintQR({ params }: { params: { slug: string } }) {
         }
 
         loadBusiness();
-    }, [params.slug]);
+    }, [slug]);
 
     if (loading) {
         return (
