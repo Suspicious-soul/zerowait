@@ -42,3 +42,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: e.message || 'Unknown error' }, { status: 500 });
     }
 }
+
+// Add a GET method for testing
+export async function GET() {
+    return NextResponse.json({ message: 'Create business API is working!' });
+}
