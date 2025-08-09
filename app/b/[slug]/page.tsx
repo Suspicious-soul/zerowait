@@ -1,27 +1,40 @@
-import { supabase } from '@/lib/supabaseClient';
+// app/b/[slug]/page.tsx
+import { createClient } from '@supabase/supabase-js';
 
-type Props = { params: { slug: string } };
+// Tell Next this is a dynamic route that should be rendered per-request (recommended for DB reads)
+export const dynamic = 'force-dynamic';
 
-export default async function BusinessPublicPage({ params }: Props) {
-    const { slug } = params;
+type PageProps = {
+    params: { slug: string };
+};
+
+async function getBusiness(slug: string) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .eq('slug', slug)
         .single();
 
-    if (error) {
-        return <div className="p-6">Business not found.</div>;
-    }
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+export default async function BusinessPublicPage({ params }: PageProps) {
+    const business = await getBusiness(params.slug);
 
     return (
         <div className="p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">{data.name}</h1>
-            <p className="text-gray-600">{data.address}</p>
+            <h1 className="text-2xl font-semibold">{business.name}</h1>
+            <p className="text-gray-600">{business.address}</p>
             <div className="border rounded p-4">
-                <p>Public page placeholder for: {data.slug}</p>
-                <p>QR (if stored): {data.qr_url || '—'}</p>
-                {/* Next steps: Join Walk-in button + Realtime position */}
+                <p>Public page for: {business.slug}</p>
+                <p>QR: {business.qr_url || '—'}</p>
+                {/* TODO: Add Join Walk-in button + Realtime position */}
             </div>
         </div>
     );
