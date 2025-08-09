@@ -25,18 +25,11 @@ export default async function PrintQR({ params }: Props) {
     const business = await getBusiness(id);
 
     return (
-        <div className="p-8 print:p-0 print:m-0">
-            <style jsx>{`
-        @media print {
-          @page { size: A4; margin: 12mm; }
-          .no-print { display: none; }
-        }
-      `}</style>
-
-            <div className="no-print mb-4 space-x-2">
+        <div className="p-8">
+            {/* Print styles handled by Tailwind's print: modifier */}
+            <div className="print:hidden mb-4 space-x-2">
                 <button
-                    onClick={() => window.print()}
-                    className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800"
+                    className="px-4 py-2 rounded bg-black text-white hover:bg-gray-800 print-btn"
                 >
                     Print QR Code
                 </button>
@@ -49,7 +42,7 @@ export default async function PrintQR({ params }: Props) {
                 </a>
             </div>
 
-            <div className="border-2 border-gray-300 p-8 rounded-lg max-w-md mx-auto text-center space-y-6 bg-white">
+            <div className="border-2 border-gray-300 p-8 rounded-lg max-w-md mx-auto text-center space-y-6 bg-white print:border-0 print:shadow-none">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">{business.name}</h1>
                     <p className="text-lg text-gray-600 mt-2">{business.address}</p>
@@ -76,6 +69,20 @@ export default async function PrintQR({ params }: Props) {
                     <p className="text-red-500">QR code not found</p>
                 )}
             </div>
+
+            {/* Add print button functionality with inline script */}
+            <script dangerouslySetInnerHTML={{
+                __html: `
+          document.addEventListener('DOMContentLoaded', function() {
+            const printBtn = document.querySelector('.print-btn');
+            if (printBtn) {
+              printBtn.addEventListener('click', function() {
+                window.print();
+              });
+            }
+          });
+        `
+            }} />
         </div>
     );
 }
