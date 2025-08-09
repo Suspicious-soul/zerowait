@@ -1,8 +1,12 @@
 import ClientBusinessView from './ClientView';
 
-// Force dynamic so Next doesn't try to statically type-gen the route
 export const dynamic = 'force-dynamic';
 
-export default function Page({ params }: { params: { slug: string } }) {
-    return <ClientBusinessView slug={params.slug} />;
+type Props = {
+    params: Promise<{ slug: string }>;
+};
+
+export default async function Page({ params }: Props) {
+    const { slug } = await params;
+    return <ClientBusinessView slug={slug} />;
 }
