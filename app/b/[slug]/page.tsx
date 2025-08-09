@@ -1,4 +1,4 @@
-import ClientBusinessView from './ClientView';
+import ClientView from './ClientView';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ type Props = {
 
 export default async function Page({ params }: Props) {
     const { slug } = await params;
-    return <ClientBusinessView slug={slug} />;
+    return <ClientView slug={slug} />;
 }

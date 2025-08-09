@@ -1,7 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 type Business = {
     id: string;
@@ -11,6 +11,6 @@ type Business = {
     qr_url?: string | null;
 };
 
-export default function ClientBusinessView({ slug }: { slug: string }) {
-    // component logic ...
+export default function ClientView({ slug }: { slug: string }) {
+    // component implementation
 }
