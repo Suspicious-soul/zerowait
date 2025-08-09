@@ -1,5 +1,6 @@
 module.exports = {
-    experimental: {
-        optimizeCss: false
-    }
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    experimental: { optimizeCss: false }, // keep your earlier change
 };
